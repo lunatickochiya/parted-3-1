@@ -1,5 +1,16 @@
 GNU parted NEWS                                    -*- outline -*-
 
+* Noteworthy changes in release ?.? (????-??-??) [?]
+
+** Bug Fixes
+
+  libparted: gpt: fix gpt_get_max_supported_partition_count to work
+  also on little-endian systems.
+
+  libparted: treat a disk with no pMBR as an msdos-labeled disk
+  even when it has valid GPT headers.
+
+
 * Noteworthy changes in release 3.1 (2012-03-02) [stable]
 
 ** New features

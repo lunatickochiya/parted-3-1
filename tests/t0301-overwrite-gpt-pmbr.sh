@@ -1,5 +1,6 @@
 #!/bin/sh
-# avoid segfault creating a dos PT on top of a gpt one
+# Test creating a msdos partition over a GPT partition with
+# fdisk which doesn't remove the GPT partitions, only the PMBR
 
 # Copyright (C) 2009-2012 Free Software Foundation, Inc.
 
@@ -17,19 +18,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/init.sh"; path_prepend_ ../parted
+
 ss=$sector_size_
-
 dev=loop-file
-# create a backing file large enough for a GPT partition table
+
+# Create a GPT partition table.
 dd if=/dev/null of=$dev bs=$ss seek=80 2> /dev/null || framework_failure
+parted -s $dev mklabel gpt > out 2>&1 || framework_failure_
+compare /dev/null out || framework_failure_
 
-# create a GPT partition table
+# Create an MSDOS partition table in another file.
+dd if=/dev/null of=m bs=$ss seek=80 2> /dev/null || framework_failure
+parted -s m mklabel msdos > out 2>&1 || framework_failure_
+compare /dev/null out || framework_failure_
+
+# Transplant the MSDOS MBR into the GPT-formatted image.
+dd if=m of=$dev bs=$ss count=1 conv=notrunc || framework_failure_
+
+# Now, try to create a GPT partition table in $dev.
+# Before, parted would prompt, asking about the apparent inconsistency.
 parted -s $dev mklabel gpt > out 2>&1 || fail=1
-# expect no output
-compare /dev/null out || fail=1
-
-# create a DOS partition table on top of it
-parted -s $dev mklabel msdos > out 2>&1 || fail=1
 # expect no output
 compare /dev/null out || fail=1
 
